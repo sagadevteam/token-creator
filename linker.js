@@ -4,7 +4,7 @@ const mysql = require('mysql')
 const Web3 = require('web3')
 var sleep = require('sleep')
 
-const web3 = new Web3(new Web3.providers.HttpProvider(env.devnet.web3Url))
+const web3 = new Web3(new Web3.providers.HttpProvider(env.web3Url))
 const HotelCalABI = HotelCal.abi
 const hotel = web3.eth.contract(HotelCalABI).at(env.contractAddress)
 
@@ -61,7 +61,8 @@ let processTickets = async () => {
     console.log('Found tickets: ' + tickets.length)
     let ticket = tickets[i]
     try {
-      let txHash = await hotel.mint(web3.eth.coinbase, ticket.ticket_id, 'http://google.com', { from: web3.eth.coinbase, to: hotel.address, gas: 470000 })
+      let txHash = await hotel.mint(web3.eth.coinbase, ticket.ticket_id, 'http://google.com',
+        { from: web3.eth.coinbase, to: hotel.address, gas: 470000 })
       console.log(txHash)
       await updateToOnChain(ticket.ticket_id)
     } catch (e) {
@@ -72,6 +73,7 @@ let processTickets = async () => {
 
 let main = async () => {
   while (true) {
+    console.log('Wait for uploading tickets...')
     await processTickets()
     sleep.sleep(60)
   }
