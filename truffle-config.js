@@ -1,25 +1,25 @@
-let env = require('./env');
-let WalletProvider = require('truffle-wallet-provider');
-let Wallet = require('ethereumjs-wallet');
+let env = require('./env')
+let WalletProvider = require('truffle-wallet-provider')
+let Wallet = require('ethereumjs-wallet')
 
-let devnet = env.devnet;
-let testnet = env.testnet;
-let mainnet = env.mainnet;
+let devnet = env.devnet
+let testnet = env.testnet
+let mainnet = env.mainnet
 
-let devnetWallet = Wallet.fromPrivateKey(new Buffer(devnet.privateKey, 'hex'));
+let devnetWallet = Wallet.fromPrivateKey(Buffer.from(devnet.privateKey, 'hex'));
 let devnetProvider = new WalletProvider(devnetWallet, devnet.web3Url);
 
-let testnetWallet = Wallet.fromPrivateKey(new Buffer(testnet.privateKey, 'hex'));
+let testnetWallet = Wallet.fromPrivateKey(Buffer.from(testnet.privateKey, 'hex'));
 let testnetProvider = new WalletProvider(testnetWallet, testnet.web3Url);
 
-let mainnetWallet = Wallet.fromPrivateKey(new Buffer(mainnet.privateKey, 'hex'));
+let mainnetWallet = Wallet.fromPrivateKey(Buffer.from(mainnet.privateKey, 'hex'));
 let mainnetProvider = new WalletProvider(mainnetWallet, mainnet.web3Url);
 
 module.exports = {
   solc: {
     optimizer: {
-        enabled: true,
-        runs: 200
+      enabled: true,
+      runs: 200
     }
   },
   networks: {
