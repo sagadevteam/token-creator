@@ -21,7 +21,7 @@ connection.connect()
 
 let targetTicketsSQL = `SELECT t.*, u.eth_addr
                         FROM tickets as t
-                        INNER JOIN users as u on (t.user_id = u.user_id)
+                        LEFT JOIN users as u on (t.user_id = u.user_id)
                         WHERE t.on_chain = '0'`
 
 let updateOnChainSQL = `UPDATE tickets
