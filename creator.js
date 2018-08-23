@@ -2,7 +2,6 @@ const HotelCal = require('./abi/HotelCal.json')
 const env = require('./env')
 const mysql = require('mysql')
 const Web3 = require('web3')
-var sleep = require('sleep')
 let Guard = require('web3-guard')
 
 const web3 = new Web3(new Web3.providers.HttpProvider(env.web3Url))
