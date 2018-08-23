@@ -9,7 +9,8 @@
   "dependencies": {
     "mysql": "^2.16.0",
     "sleep": "^5.2.3",
-    "web3": "^0.20.7"
+    "web3": "^0.20.7",
+    "web3-guard": "^0.2.3"
   },
   "devDependencies": {
     "eslint": "^5.4.0",
