@@ -1,12 +1,17 @@
-const HotelCal = require('./abi/HotelCal.json')
 const env = require('./env')
 const mysql = require('mysql')
 const Web3 = require('web3')
 let Guard = require('web3-guard')
 
+const HotelCal = require('./abi/HotelCal.json')
+const SAGAPoint = require('./abi/SAGApoint.json')
+
 const web3 = new Web3(new Web3.providers.HttpProvider(env.web3Url))
 const HotelCalABI = HotelCal.abi
-const hotel = web3.eth.contract(HotelCalABI).at(env.contractAddress)
+const hotel = web3.eth.contract(HotelCalABI).at(env.hotelContract)
+
+const SAGAPointABI = SAGAPoint.abi
+const point = web3.eth.contract(SAGAPointABI).at(env.sagaPointContract)
 
 const dbconfig = env.dbconfig
 
@@ -55,38 +60,52 @@ let updateToOnChain = async (ticketID) => {
   }
 }
 
-let guard = new Guard(web3)
-let confirmations = 6
-guard = guard.bind('1122').confirm(confirmations)
-guard.on(hotel, hotel.Transfer({
-  _from: '0x0000000000000000000000000000000000000000',
-  _to: web3.eth.coinbase
-}).watch(async (err, event) => {
-  if (err) {
-    console.error(err)
-  } else {
-    if (!event.confirmed) {
-      console.log('Not confirm mint tranasction: ' + event.transactionHash)
-      guard.wait(event)
-    } else {
-      console.log('Confirm mint tranasction: ' + event.transactionHash)
-      let tokenID = parseInt(event.args._tokenId)
-      await updateToOnChain(tokenID)
-      console.log('Update token status to on-chain: ' + tokenID)
-    }
-  }
-}))
-
 let processTickets = async () => {
   let tickets = await getOffChainTickets()
+  console.log('Found tickets: ' + tickets.length)
   for (let i = 0; i < tickets.length; i++) {
-    console.log('Found tickets: ' + tickets.length)
     let ticket = tickets[i]
     try {
-      let txHash = await hotel.mint(web3.eth.coinbase, ticket.ticket_id, 'http://google.com', ticket.price,
+      let tokenID = null
+      let guard = new Guard(web3)
+      let confirmations = 6
+      guard = guard.bind(i).confirm(confirmations)
+      let txHash = await hotel.mint(web3.eth.coinbase, ticket.ticket_id, 'http://google.com', web3.toWei(ticket.price),
         { from: web3.eth.coinbase, to: hotel.address, gas: 470000 })
       console.log(txHash)
       guard.listen(txHash)
+      guard.on(hotel, hotel.Transfer({
+        _from: '0x0000000000000000000000000000000000000000',
+        _to: web3.eth.coinbase
+      }).watch(async (err, event) => {
+        if (err) {
+          console.error(err)
+        } else {
+          if (!event.confirmed) {
+            console.log('Unconfirmed minting ERC721 tranasction: ' + event.transactionHash)
+            guard.wait(event)
+          } else {
+            console.log('Confirmed minting ERC721 tranasction: ' + event.transactionHash)
+            tokenID = parseInt(event.args._tokenId)
+            let txHash = point.mint(web3.eth.coinbase, web3.toWei(ticket.price),
+              { from: web3.eth.coinbase, to: hotel.address, gas: 470000 })
+            guard.listen(txHash)
+          }
+        }
+      })).on(point, point.Mint().watch(async (err, event) => {
+        if (err) {
+          console.error(err)
+        } else {
+          if (!event.confirmed) {
+            console.log('Unconfirmed minting ERC20 tranasction: ' + event.transactionHash)
+            guard.wait(event)
+          } else {
+            await updateToOnChain(tokenID)
+            console.log('Confirmed minting ERC20 for ticket: ' + tokenID + ' price: ' + ticket.price)
+            guard.destroy()
+          }
+        }
+      }))
     } catch (e) {
       console.log(e)
     }
@@ -99,7 +118,7 @@ let main = async () => {
   setInterval(async () => {
     console.log('Wait for uploading tickets...')
     await processTickets()
-  }, 86400)
+  }, 86400000)
 }
 
 main()
